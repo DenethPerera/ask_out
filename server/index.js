@@ -29,7 +29,13 @@ app.use(express.json())
 app.use('/api/answer', answerRouter)
 
 // Health check
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }))
+app.get('/api/health', (_req, res) => res.json({
+  status: 'ok',
+  time: new Date().toISOString(),
+  emailUser: process.env.EMAIL_USER,
+  emailPassSet: !!process.env.EMAIL_PASS,
+  mongoUri: process.env.MONGO_URI ? 'set' : 'MISSING',
+}))
 
 // ─── MongoDB + Start ─────────────────────────────────────────────────────────
 mongoose
