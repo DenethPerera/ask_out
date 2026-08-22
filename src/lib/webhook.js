@@ -1,29 +1,35 @@
-// --- Webhook notification --------------------------------------------------
-// Paste your endpoint below to get pinged the instant she clicks "Yes":
-//   - Formspree:  https://formspree.io/f/xxxxxxxx  (create a form, use its endpoint)
-//   - EmailJS:    use their REST send URL + public key/template in the body
-//   - Your own API: any URL that accepts a POST with a JSON body
+// --- Backend notification --------------------------------------------------
+// Sends the answer to our Express/MongoDB backend which:
+//   1. Saves the response to MongoDB
+//   2. Emails deneth676@gmail.com in real time
 //
-// Left blank, this quietly does nothing — the app still works fine without it.
-const WEBHOOK_URL = ''; // e.g. 'https://formspree.io/f/xxxxxxxx'
+// In production this reads from VITE_API_URL (set in Vercel env vars).
+// In local dev it falls back to localhost:3001.
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api/answer'
 
-export async function notifyYes() {
-  if (!WEBHOOK_URL) return;
-
+/**
+ * @param {'yes'|'no'} answer
+ * @param {number} dodgeCount  How many times she tried to dodge the No button
+ */
+export async function notifyAnswer(answer, dodgeCount = 0) {
   try {
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: 'She said YES! 💍',
-        answer: 'yes',
-        timestamp: new Date().toISOString(),
-      }),
+      body: JSON.stringify({ answer, dodgeCount }),
       // Lets the request finish even if the tab is closed right after.
       keepalive: true,
-    });
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      console.warn('Backend notification failed:', data)
+    }
   } catch (err) {
-    // Never let a failed notification interrupt her success moment.
-    console.warn('Webhook notification failed:', err);
+    // Never let a failed notification interrupt her moment.
+    console.warn('Backend notification error:', err)
   }
 }
+
+// Convenience alias kept for backwards-compat
+export const notifyYes = () => notifyAnswer('yes', 0)

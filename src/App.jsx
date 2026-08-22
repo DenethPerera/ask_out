@@ -3,16 +3,17 @@ import FloatingHearts from './components/FloatingHearts'
 import IntroScreen from './components/IntroScreen'
 import ProposalCard from './components/ProposalCard'
 import SuccessScreen from './components/SuccessScreen'
-import { notifyYes } from './lib/webhook'
+import { notifyAnswer } from './lib/webhook'
 
 const STAGE = { INTRO: 'intro', ASK: 'ask', SUCCESS: 'success' }
 
 export default function App() {
   const [stage, setStage] = useState(STAGE.INTRO)
 
-  const handleYes = useCallback(() => {
+  // dodgeCount is passed up from ProposalCard when she clicks Yes
+  const handleYes = useCallback((dodgeCount = 0) => {
     setStage(STAGE.SUCCESS)
-    notifyYes() // fire-and-forget — wire up an endpoint in src/lib/webhook.js
+    notifyAnswer('yes', dodgeCount) // fire-and-forget — saves to MongoDB + sends email
   }, [])
 
   return (

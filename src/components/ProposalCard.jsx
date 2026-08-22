@@ -173,7 +173,7 @@ export default function ProposalCard({ onYes }) {
           <button
             ref={yesRef}
             type="button"
-            onClick={onYes}
+            onClick={() => onYes(dodgeCount)}
             onMouseEnter={reactYes}
             onFocus={reactYes}
             onTouchStart={reactYes}
