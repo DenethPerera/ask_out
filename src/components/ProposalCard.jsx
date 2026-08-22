@@ -17,7 +17,7 @@ const NO_EXCUSES = [
   'Think again!',
   'Last chance...',
   'Surely not?',
-  'You might regret this',
+  'You’re really choosing no? 👀',
   'Give it another thought',
   'Are you positive?',
   'Just checking...',
