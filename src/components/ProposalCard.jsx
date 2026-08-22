@@ -15,7 +15,7 @@ const NO_EXCUSES = [
   'Are you sure?',
   'Really sure?',
   'Think again!',
-  "Last chance...",
+  'Last chance...',
   'Surely not?',
   'You might regret this',
   'Give it another thought',
@@ -23,7 +23,10 @@ const NO_EXCUSES = [
   'Just checking...',
 ]
 
-export default function ProposalCard({ onYes }) {
+// After this many dodges the No button stops running and becomes clickable.
+const MAX_DODGES = 10
+
+export default function ProposalCard({ onYes, onNo }) {
   const containerRef = useRef(null)
   const yesRef = useRef(null)
   const noRef = useRef(null)
@@ -111,37 +114,56 @@ export default function ProposalCard({ onYes }) {
   })
 
   // Runs the No button to a random spot on the viewport, just out of reach.
+  // On the 10th attempt it instead animates back to its original spot and
+  // becomes a real clickable button.
   const dodge = contextSafe(() => {
     const btn = noRef.current
     if (!btn) return
 
-    const rect = btn.getBoundingClientRect()
-    launchReaction(NO_REACTION_STICKER, rect)
+    setDodgeCount((prev) => {
+      const next = prev + 1
 
-    const margin = 16
-    const maxX = Math.max(margin, window.innerWidth - rect.width - margin)
-    const maxY = Math.max(margin, window.innerHeight - rect.height - margin)
+      if (next >= MAX_DODGES) {
+        // Snap back to the reserved spacer position so it looks "settled".
+        const rect = noSpacerRef.current.getBoundingClientRect()
+        gsap.to(btn, {
+          left: rect.left,
+          top: rect.top,
+          duration: 0.6,
+          ease: 'elastic.out(1, 0.5)',
+          overwrite: 'auto',
+        })
+      } else {
+        const rect = btn.getBoundingClientRect()
+        launchReaction(NO_REACTION_STICKER, rect)
 
-    gsap.to(btn, {
-      left: gsap.utils.random(margin, maxX),
-      top: gsap.utils.random(margin, maxY),
-      duration: 0.35,
-      ease: 'back.out(1.7)',
-      overwrite: 'auto',
+        const margin = 16
+        const maxX = Math.max(margin, window.innerWidth - rect.width - margin)
+        const maxY = Math.max(margin, window.innerHeight - rect.height - margin)
+
+        gsap.to(btn, {
+          left: gsap.utils.random(margin, maxX),
+          top: gsap.utils.random(margin, maxY),
+          duration: 0.35,
+          ease: 'back.out(1.7)',
+          overwrite: 'auto',
+        })
+
+        // The Yes button gets a little more excited every time she tries.
+        gsap.to(yesRef.current, {
+          scale: '+=0.04',
+          duration: 0.3,
+          ease: 'back.out(2)',
+          overwrite: 'auto',
+        })
+      }
+
+      return next
     })
-
-    // The Yes button gets a little more excited every time she tries.
-    gsap.to(yesRef.current, {
-      scale: '+=0.04',
-      duration: 0.3,
-      ease: 'back.out(2)',
-      overwrite: 'auto',
-    })
-
-    setDodgeCount((c) => Math.min(c + 1, NO_EXCUSES.length - 1))
   })
 
-  const noLabel = NO_EXCUSES[dodgeCount]
+  const settled = dodgeCount >= MAX_DODGES
+  const noLabel = settled ? 'Fine... No 💔' : NO_EXCUSES[Math.min(dodgeCount, NO_EXCUSES.length - 1)]
 
   return (
     <div
@@ -206,11 +228,15 @@ export default function ProposalCard({ onYes }) {
       <button
         ref={noRef}
         type="button"
-        onMouseEnter={dodge}
-        onClick={dodge}
-        onTouchStart={dodge}
+        onMouseEnter={settled ? undefined : dodge}
+        onClick={settled ? () => onNo(dodgeCount) : dodge}
+        onTouchStart={settled ? undefined : dodge}
         style={{ position: 'fixed', left: 0, top: 0 }}
-        className="reveal-item z-20 inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-rose-200 bg-white/80 px-6 py-3 text-base font-medium text-rose-400 shadow-md backdrop-blur"
+        className={
+          settled
+            ? 'reveal-item z-20 inline-flex items-center gap-2 whitespace-nowrap rounded-full border-2 border-gray-400 bg-gray-100/90 px-6 py-3 text-base font-semibold text-gray-500 shadow-lg backdrop-blur transition-transform hover:scale-105 active:scale-95'
+            : 'reveal-item z-20 inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-rose-200 bg-white/80 px-6 py-3 text-base font-medium text-rose-400 shadow-md backdrop-blur'
+        }
       >
         <img
           src={NO_STICKER.src}
