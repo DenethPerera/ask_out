@@ -5,7 +5,10 @@
 //
 // In production this reads from VITE_API_URL (set in Vercel env vars).
 // In local dev it falls back to localhost:3001.
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api/answer'
+// Normalise the env var: strip trailing slash, then ensure it ends with /api/answer
+// Works whether VITE_API_URL is the base URL or the full endpoint path.
+const _base = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001').replace(/\/+$/, '')
+const API_URL = _base.endsWith('/api/answer') ? _base : `${_base}/api/answer`
 
 /**
  * @param {'yes'|'no'} answer
